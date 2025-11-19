@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "plugin": [],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "readme": "README.md",
+  "name": "express-numflow",
+  "includeVersion": true,
+  "sort": ["source-order"],
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Core Functions",
+    "Type Definitions",
+    "Error Handling",
+    "*"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}
