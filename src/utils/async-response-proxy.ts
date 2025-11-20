@@ -40,7 +40,10 @@ export function createAsyncResponseProxy(
   res: ServerResponse,
   tracker: AsyncResponseTracker
 ): ServerResponse {
-  return new Proxy(res, {
+  // Store proxy reference for method chaining support
+  let proxy: any
+
+  proxy = new Proxy(res, {
     get(target: any, prop: string | symbol) {
       const value = target[prop]
 
@@ -114,13 +117,27 @@ export function createAsyncResponseProxy(
         }
       }
 
-      // For function properties, bind to target
+      // For function properties, wrap to support method chaining
+      // 🔧 CRITICAL FIX: When methods return 'this' (like res.status()), return proxy instead
+      // This ensures chaining works correctly: res.status(400).render(...)
       if (typeof value === 'function') {
-        return value.bind(target)
+        return function (this: any, ...args: any[]) {
+          const result = value.apply(target, args)
+
+          // If function returns target (for chaining), return proxy instead
+          // This enables: res.status(400).render(...) to work with Proxy
+          if (result === target) {
+            return proxy
+          }
+
+          return result
+        }
       }
 
       // Return other properties as-is
       return value
     },
   })
+
+  return proxy
 }

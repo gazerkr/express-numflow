@@ -580,4 +580,245 @@ describe('Async Response Support', () => {
       expect(res.send).not.toHaveBeenCalled()
     })
   })
+
+  describe('res.render() in catch block (Prisma error case)', () => {
+    it('should handle res.render() in catch block and not execute next step', async () => {
+      let nextStepExecuted = false
+
+      const req: any = {
+        method: 'POST',
+        url: '/admin/tags',
+      }
+
+      const res: any = {
+        headersSent: false,
+        status: jest.fn(function (this: any, _code: number) {
+          return this
+        }),
+        render: jest.fn(function (this: any, _view: string, _locals: any, callback?: Function) {
+          setImmediate(() => {
+            setTimeout(() => {
+              this.headersSent = true
+              if (callback) callback(null, '<html>Error</html>')
+            }, 50)
+          })
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          this.headersSent = true
+          return this
+        }),
+        json: jest.fn(function (this: any, _data: any) {
+          if (this.headersSent) {
+            throw new Error('Cannot set headers after they are sent to the client')
+          }
+          this.headersSent = true
+        }),
+      }
+
+      const steps: StepInfo[] = [
+        {
+          number: 100,
+          name: '100-create-tag.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            try {
+              // Simulate Prisma unique constraint error
+              const error: any = new Error('Unique constraint failed')
+              error.code = 'P2002'
+              throw error
+            } catch (error: any) {
+              if (error.code === 'P2002') {
+                // This is the critical case: res.render() in catch block
+                return res.status(400).render('error', { message: 'Tag already exists' })
+              }
+              throw error
+            }
+          },
+        },
+        {
+          number: 200,
+          name: '200-next-step.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            // This step should NOT execute because Step 100 already sent response
+            nextStepExecuted = true
+            res.json({ status: 'ok' })
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      // Should complete without error
+      await expect(executor.execute()).resolves.not.toThrow()
+
+      // Verify: res.status() was called
+      expect(res.status).toHaveBeenCalledWith(400)
+
+      // Verify: res.render() was called (Proxy adds callback, so we check with expect.any(Function))
+      expect(res.render).toHaveBeenCalledWith('error', { message: 'Tag already exists' }, expect.any(Function))
+
+      // Verify: next step was NOT executed
+      expect(nextStepExecuted).toBe(false)
+      expect(res.json).not.toHaveBeenCalled()
+
+      // Verify: response was sent
+      expect(res.headersSent).toBe(true)
+    })
+
+    it('should handle res.render() in catch block followed by res.redirect() without error', async () => {
+      const req: any = {
+        method: 'POST',
+        url: '/test',
+      }
+
+      const res: any = {
+        headersSent: false,
+        status: jest.fn(function (this: any, _code: number) {
+          return this
+        }),
+        render: jest.fn(function (this: any, _view: string, _locals: any, callback?: Function) {
+          setImmediate(() => {
+            this.headersSent = true
+            if (callback) callback(null, '<html>Error</html>')
+          })
+        }),
+        redirect: jest.fn(function (this: any, _url: string) {
+          if (this.headersSent) {
+            throw new Error('Cannot set headers after they are sent to the client')
+          }
+          this.headersSent = true
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          this.headersSent = true
+          return this
+        }),
+      }
+
+      const steps: StepInfo[] = [
+        {
+          number: 100,
+          name: '100-error-handler.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            try {
+              throw new Error('Some error')
+            } catch (error) {
+              return res.status(500).render('error', { message: 'Internal error' })
+            }
+          },
+        },
+        {
+          number: 200,
+          name: '200-redirect.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            res.redirect('/dashboard')
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      // Should complete without error
+      await expect(executor.execute()).resolves.not.toThrow()
+
+      // Verify: only render was called, redirect was NOT called
+      expect(res.render).toHaveBeenCalled()
+      expect(res.redirect).not.toHaveBeenCalled()
+    })
+
+    it('should handle multiple catch blocks with res.render() correctly', async () => {
+      const req: any = {
+        method: 'POST',
+        url: '/test',
+      }
+
+      const res: any = {
+        headersSent: false,
+        status: jest.fn(function (this: any, _code: number) {
+          return this
+        }),
+        render: jest.fn(function (this: any, _view: string, _locals: any, callback?: Function) {
+          setImmediate(() => {
+            this.headersSent = true
+            if (callback) callback(null, '<html>Error</html>')
+          })
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          this.headersSent = true
+          return this
+        }),
+      }
+
+      let step1Executed = false
+      let step2Executed = false
+      let step3Executed = false
+
+      const steps: StepInfo[] = [
+        {
+          number: 100,
+          name: '100-validation.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, _res: any) => {
+            step1Executed = true
+            // Step 1: Validation passes
+          },
+        },
+        {
+          number: 200,
+          name: '200-db-operation.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            step2Executed = true
+            try {
+              // Simulate DB error
+              throw new Error('DB Error')
+            } catch (error) {
+              return res.status(500).render('error', { message: 'DB failed' })
+            }
+          },
+        },
+        {
+          number: 300,
+          name: '300-success.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            step3Executed = true
+            res.send('Success')
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      await executor.execute()
+
+      // Verify execution order
+      expect(step1Executed).toBe(true)
+      expect(step2Executed).toBe(true)
+      expect(step3Executed).toBe(false)  // Should NOT execute
+
+      // Verify render was called
+      expect(res.render).toHaveBeenCalled()
+
+      // Note: res.send() is called by Proxy to send rendered HTML (expected behavior)
+      expect(res.send).toHaveBeenCalledWith('<html>Error</html>')
+    })
+  })
 })
