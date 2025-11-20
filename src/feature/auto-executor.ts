@@ -153,6 +153,20 @@ export class AutoExecutor {
           return context
         }
 
+        // 🔧 CRITICAL FIX: Wait for async response before proceeding to next step
+        // This prevents "Cannot set headers after they are sent" errors when:
+        // - Step 200: res.render() (async, returns immediately)
+        // - Step 300: res.redirect() (would try to set headers while Step 200 is still rendering)
+        if (asyncTracker.pending && asyncTracker.promise) {
+          await asyncTracker.promise
+
+          // After async operation completes, check if response was sent
+          if (res.headersSent) {
+            this.logSummary(true)
+            return context
+          }
+        }
+
       } catch (error) {
         // Error statistics and log processing only in Debug Mode
         if (AutoExecutor.isDebugMode) {

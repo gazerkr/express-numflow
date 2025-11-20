@@ -381,4 +381,203 @@ describe('Async Response Support', () => {
       )
     })
   })
+
+  describe('Multiple steps with async response (Critical Bug Fix)', () => {
+    it('should wait for async response before executing next step', async () => {
+      let renderCompleted = false
+      let redirectCalled = false
+
+      const req: any = {
+        method: 'GET',
+        url: '/test',
+      }
+
+      const res: any = {
+        headersSent: false,
+        render: jest.fn(function (this: any, _view: string, _locals: any, callback?: Function) {
+          // Simulate async rendering (takes 50ms)
+          setImmediate(() => {
+            setTimeout(() => {
+              renderCompleted = true
+              this.headersSent = true
+              if (callback) callback(null, '<html>Rendered</html>')
+            }, 50)
+          })
+        }),
+        redirect: jest.fn(function (this: any, _url: string) {
+          redirectCalled = true
+          if (this.headersSent) {
+            throw new Error('Cannot set headers after they are sent to the client')
+          }
+          this.headersSent = true
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          this.headersSent = true
+          return this
+        }),
+      }
+
+      const steps: StepInfo[] = [
+        {
+          number: 200,
+          name: '200-render.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            // Step 200: res.render() starts async rendering
+            res.render('index', { title: 'Test' })
+            // Function returns immediately (before rendering completes)
+          },
+        },
+        {
+          number: 300,
+          name: '300-redirect.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            // Step 300: Should NOT execute because Step 200 already sent response
+            res.redirect('/dashboard')
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      // Should complete without error
+      await expect(executor.execute()).resolves.not.toThrow()
+
+      // Verify: render completed
+      expect(renderCompleted).toBe(true)
+      expect(res.render).toHaveBeenCalled()
+
+      // Verify: redirect was NOT called (because response already sent)
+      expect(redirectCalled).toBe(false)
+      expect(res.redirect).not.toHaveBeenCalled()
+
+      // Verify: response was sent
+      expect(res.headersSent).toBe(true)
+    })
+
+    it('should handle res.render() followed by res.json() without error', async () => {
+      const req: any = {
+        method: 'GET',
+        url: '/test',
+      }
+
+      const res: any = {
+        headersSent: false,
+        render: jest.fn(function (this: any, _view: string, _locals: any, callback?: Function) {
+          setImmediate(() => {
+            this.headersSent = true
+            if (callback) callback(null, '<html>Rendered</html>')
+          })
+        }),
+        json: jest.fn(function (this: any, _data: any) {
+          if (this.headersSent) {
+            throw new Error('Cannot set headers after they are sent to the client')
+          }
+          this.headersSent = true
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          this.headersSent = true
+          return this
+        }),
+      }
+
+      const steps: StepInfo[] = [
+        {
+          number: 100,
+          name: '100-render.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            res.render('index', { title: 'Test' })
+          },
+        },
+        {
+          number: 200,
+          name: '200-json.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            res.json({ status: 'ok' })
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      // Should complete without error
+      await expect(executor.execute()).resolves.not.toThrow()
+
+      // Verify: only render was called, json was NOT called
+      expect(res.render).toHaveBeenCalled()
+      expect(res.json).not.toHaveBeenCalled()
+    })
+
+    it('should handle res.download() followed by res.send() without error', async () => {
+      const req: any = {
+        method: 'GET',
+        url: '/test',
+      }
+
+      const res: any = {
+        headersSent: false,
+        download: jest.fn(function (this: any, _filePath: string, callback?: Function) {
+          setImmediate(() => {
+            setTimeout(() => {
+              this.headersSent = true
+              if (callback) callback(null)
+            }, 30)
+          })
+        }),
+        send: jest.fn(function (this: any, _body: any) {
+          if (this.headersSent) {
+            throw new Error('Cannot set headers after they are sent to the client')
+          }
+          this.headersSent = true
+          return this
+        }),
+      }
+
+      const steps: StepInfo[] = [
+        {
+          number: 100,
+          name: '100-download.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            res.download('/path/to/file.pdf')
+          },
+        },
+        {
+          number: 200,
+          name: '200-send.js',
+          path: '/fake/path',
+          fn: async (_ctx: any, _req: any, res: any) => {
+            res.send('Download complete')
+          },
+        },
+      ]
+
+      const executor = new AutoExecutor({
+        steps,
+        context: {},
+        req,
+        res,
+      })
+
+      // Should complete without error
+      await expect(executor.execute()).resolves.not.toThrow()
+
+      // Verify: only download was called, send was NOT called
+      expect(res.download).toHaveBeenCalled()
+      expect(res.send).not.toHaveBeenCalled()
+    })
+  })
 })
