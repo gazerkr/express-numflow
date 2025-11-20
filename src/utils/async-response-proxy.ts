@@ -61,13 +61,27 @@ export function createAsyncResponseProxy(
               const lastArg = args[args.length - 1]
               const hasCallback = typeof lastArg === 'function'
 
-              const wrappedCallback = function (this: any, err?: Error) {
+              const wrappedCallback = function (this: any, err?: Error, html?: string) {
                 // Mark as completed
                 tracker.pending = false
 
                 // Call original callback if exists
                 if (hasCallback) {
                   lastArg.apply(this, arguments)
+                }
+
+                // If no user callback and res.render/res.download/res.sendFile succeeded,
+                // we need to send the response
+                if (!hasCallback && !err) {
+                  // For res.render(), send the rendered HTML
+                  if (prop === 'render' && html) {
+                    const send = (target as any).send
+                    if (typeof send === 'function') {
+                      send.call(target, html)
+                    }
+                  }
+                  // For res.download() and res.sendFile(), they handle the response themselves
+                  // when no callback is provided, so we don't need to do anything
                 }
 
                 // Resolve or reject based on error
