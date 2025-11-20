@@ -82,6 +82,11 @@ export class FeatureScanner {
 
     this.log(`Found ${features.length} features`)
 
+    // 🔧 CRITICAL FIX: Sort features by route priority
+    // This ensures static routes are registered before dynamic routes
+    // Example: /blog/search (static) before /blog/:slug (dynamic)
+    this.sortFeaturesByPriority(features)
+
     return features
   }
 
@@ -261,6 +266,71 @@ export class FeatureScanner {
       steps: conventions.steps ?? undefined,
       asyncTasks: conventions.asyncTasks ?? undefined,
     }, dir)
+  }
+
+  /**
+   * Sort features by route priority
+   *
+   * Priority rules (highest to lowest):
+   * 1. Depth: Deeper routes first (/a/b/c before /a/b)
+   * 2. Specificity: Static segments before dynamic (/blog/search before /blog/:slug)
+   * 3. Alphabetical: For same priority, alphabetical order
+   *
+   * @param features - Features array to sort (in-place)
+   * @private
+   */
+  private sortFeaturesByPriority(features: ScannedFeature[]): void {
+    features.sort((a, b) => {
+      const priorityA = this.calculateRoutePriority(a.feature.getInfo().path)
+      const priorityB = this.calculateRoutePriority(b.feature.getInfo().path)
+
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA  // Higher priority first (descending)
+      }
+
+      // Same priority: alphabetical order for consistency
+      const pathA = a.feature.getInfo().path || ''
+      const pathB = b.feature.getInfo().path || ''
+      return pathA.localeCompare(pathB)
+    })
+  }
+
+  /**
+   * Calculate route priority score
+   *
+   * Higher score = Higher priority (should be registered first)
+   *
+   * Scoring:
+   * - Each segment: +1000 points (depth)
+   * - Each static segment: +100 points (specificity)
+   *
+   * Examples:
+   * - /blog/search/advanced → 3000 + 300 = 3300
+   * - /blog/search → 2000 + 200 = 2200
+   * - /blog/:slug → 2000 + 100 = 2100
+   * - / → 1000 + 100 = 1100
+   *
+   * @param routePath - Route path
+   * @returns Priority score
+   * @private
+   */
+  private calculateRoutePriority(routePath: string | undefined): number {
+    if (!routePath) return 0
+
+    const segments = routePath.split('/').filter(s => s.length > 0)
+    let score = 0
+
+    // 1. Depth: Each segment adds 1000 points
+    score += segments.length * 1000
+
+    // 2. Specificity: Each static (non-dynamic) segment adds 100 points
+    for (const segment of segments) {
+      if (!segment.startsWith(':')) {
+        score += 100
+      }
+    }
+
+    return score
   }
 
   /**
