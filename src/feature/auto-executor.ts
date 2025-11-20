@@ -13,6 +13,7 @@
 
 import { StepInfo, Context, AutoExecutionOptions, FeatureError } from './types'
 import { hasStatusCode } from '../utils/type-guards'
+import { createAsyncResponseProxy, AsyncResponseTracker } from '../utils/async-response-proxy'
 
 /**
  * Step execution statistics
@@ -97,6 +98,15 @@ export class AutoExecutor {
       throw new Error('No steps to execute')
     }
 
+    // Create async response tracker
+    const asyncTracker: AsyncResponseTracker = {
+      pending: false,
+      promise: null,
+    }
+
+    // Wrap response object with Proxy to track async methods
+    const wrappedRes = createAsyncResponseProxy(res, asyncTracker)
+
     // Feature start header
     this.logHeader(req)
 
@@ -115,8 +125,8 @@ export class AutoExecutor {
       }
 
       try {
-        // Execute Step function
-        await step.fn(context, req, res)
+        // Execute Step function with proxied response
+        await step.fn(context, req, wrappedRes)
 
         // Statistics and log processing only in Debug Mode
         if (AutoExecutor.isDebugMode) {
@@ -186,6 +196,11 @@ export class AutoExecutor {
         throw featureError
       }
       // --- executeStep logic end (inline) ---
+    }
+
+    // Wait for async response methods (res.render, res.download, res.sendFile) to complete
+    if (asyncTracker.pending && asyncTracker.promise) {
+      await asyncTracker.promise
     }
 
     // Error if response not sent after all steps completed

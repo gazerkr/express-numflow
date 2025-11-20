@@ -246,6 +246,53 @@ Feature 디렉토리를 열면 즉시 다음을 알 수 있습니다:
 
 ---
 
+## 응답 메서드
+
+express-numflow는 **비동기 메서드**인 `res.render()`, `res.download()`, `res.sendFile()`을 포함한 모든 Express 응답 메서드를 지원합니다:
+
+```javascript
+// features/blog/[slug]/@get/steps/100-render.js
+module.exports = async (ctx, req, res) => {
+  // res.render()가 완벽하게 작동합니다 - await 불필요!
+  res.render('blog-post', {
+    title: ctx.post.title,
+    content: ctx.post.content,
+    author: ctx.post.author,
+  })
+}
+```
+
+```javascript
+// features/files/download/@get/steps/100-download.js
+module.exports = async (ctx, req, res) => {
+  // res.download()도 자동으로 작동합니다
+  res.download('/path/to/file.pdf', 'document.pdf')
+}
+```
+
+**동작 원리:**
+- 동기 메서드 (`res.json()`, `res.send()`, `res.end()`, `res.redirect()`)는 즉시 실행
+- 비동기 메서드 (`res.render()`, `res.download()`, `res.sendFile()`)는 자동으로 추적
+- `await` 불필요, Promise 래핑 불필요, 콜백 처리 불필요
+- express-numflow가 비동기 메서드 완료까지 자동 대기 후 응답 확인
+
+**지원되는 응답 메서드:**
+| 메서드 | 타입 | 상태 |
+|--------|------|------|
+| `res.send()` | 동기 | ✅ 즉시 실행 |
+| `res.json()` | 동기 | ✅ 즉시 실행 |
+| `res.redirect()` | 동기 | ✅ 즉시 실행 |
+| `res.sendStatus()` | 동기 | ✅ 즉시 실행 |
+| `res.end()` | 동기 | ✅ 즉시 실행 |
+| `res.render()` | 비동기 | ✅ 자동 추적 |
+| `res.download()` | 비동기 | ✅ 자동 추적 |
+| `res.sendFile()` | 비동기 | ✅ 자동 추적 |
+| `res.sendfile()` | 비동기 (deprecated) | ✅ 자동 추적 |
+
+**그냥 작동합니다™** - 비동기 완료를 신경 쓰지 않고 자연스럽게 코드를 작성하세요!
+
+---
+
 ## Async Tasks (백그라운드 실행)
 
 Async tasks는 응답을 차단하지 않고 **백그라운드**에서 실행됩니다:

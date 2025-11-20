@@ -239,6 +239,53 @@ This is the essence of Convention over Configuration - **let the structure speak
 
 ---
 
+## Response Methods
+
+express-numflow supports all Express response methods, including **async methods** like `res.render()`, `res.download()`, and `res.sendFile()`:
+
+```javascript
+// features/blog/[slug]/@get/steps/100-render.js
+module.exports = async (ctx, req, res) => {
+  // res.render() works seamlessly - no await needed!
+  res.render('blog-post', {
+    title: ctx.post.title,
+    content: ctx.post.content,
+    author: ctx.post.author,
+  })
+}
+```
+
+```javascript
+// features/files/download/@get/steps/100-download.js
+module.exports = async (ctx, req, res) => {
+  // res.download() also works automatically
+  res.download('/path/to/file.pdf', 'document.pdf')
+}
+```
+
+**How it works:**
+- Synchronous methods (`res.json()`, `res.send()`, `res.end()`, `res.redirect()`) work instantly
+- Async methods (`res.render()`, `res.download()`, `res.sendFile()`) are tracked automatically
+- No `await`, no Promise wrapping, no callback handling needed
+- express-numflow waits for async methods to complete before checking if response was sent
+
+**Supported response methods:**
+| Method | Type | Status |
+|--------|------|--------|
+| `res.send()` | Synchronous | ✅ Instant |
+| `res.json()` | Synchronous | ✅ Instant |
+| `res.redirect()` | Synchronous | ✅ Instant |
+| `res.sendStatus()` | Synchronous | ✅ Instant |
+| `res.end()` | Synchronous | ✅ Instant |
+| `res.render()` | Async | ✅ Auto-tracked |
+| `res.download()` | Async | ✅ Auto-tracked |
+| `res.sendFile()` | Async | ✅ Auto-tracked |
+| `res.sendfile()` | Async (deprecated) | ✅ Auto-tracked |
+
+**This just works™** - write code naturally without thinking about async completion!
+
+---
+
 ## Async Tasks (Background Execution)
 
 Async tasks run in the **background** without blocking the response:
