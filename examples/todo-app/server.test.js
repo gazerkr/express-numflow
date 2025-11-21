@@ -1,7 +1,7 @@
 const request = require('supertest')
 const express = require('express')
 const path = require('path')
-const { createFeatureRouter } = require('../../dist/cjs')
+const { createFeatureRouter } = require('express-numflow')
 const db = require('./db')
 
 describe('Todo App Integration Tests', () => {
