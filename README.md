@@ -591,6 +591,50 @@ Check the debug output:
 const router = await createFeatureRouter('./features', { debug: true })
 ```
 
+### Want to see step execution logs?
+
+Use the `FEATURE_LOGS` environment variable to control step execution logging:
+
+```bash
+# Enable step execution logs
+FEATURE_LOGS=true npm start
+
+# Disable step execution logs
+FEATURE_LOGS=false npm start
+```
+
+**Logging Behavior:**
+
+- **Test environment** (`NODE_ENV=test`): Always OFF (for clean test output)
+- **Development** (`NODE_ENV=development`): ON by default
+- **Production** (`NODE_ENV=production`): OFF by default
+- **Explicit control**: `FEATURE_LOGS=true/false` overrides defaults (highest priority)
+
+**Example package.json:**
+
+```json
+{
+  "scripts": {
+    "dev": "FEATURE_LOGS=true nodemon app.js",
+    "start": "node app.js"
+  }
+}
+```
+
+**Example output:**
+
+```
+[Feature] POST /api/orders - Start
+[Step] 100-validate.js - Start
+[Step] 100-validate.js - Complete (15ms)
+[Step] 200-check-stock.js - Start
+[Step] 200-check-stock.js - Complete (8ms)
+[Step] 300-create-order.js - Start
+[Step] 300-create-order.js - Complete (23ms)
+[Feature] POST /api/orders - Complete (46ms)
+[Async-Tasks] Starting 2 async tasks...
+```
+
 ### TypeScript errors?
 
 Make sure you have type definitions installed:

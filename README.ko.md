@@ -600,6 +600,50 @@ const { validateEmail } = require("#lib/validators");
 const router = await createFeatureRouter("./features", { debug: true });
 ```
 
+### Step 실행 로그를 보고 싶나요?
+
+`FEATURE_LOGS` 환경 변수를 사용하여 Step 실행 로그를 제어할 수 있습니다:
+
+```bash
+# Step 실행 로그 활성화
+FEATURE_LOGS=true npm start
+
+# Step 실행 로그 비활성화
+FEATURE_LOGS=false npm start
+```
+
+**로깅 동작:**
+
+- **테스트 환경** (`NODE_ENV=test`): 항상 OFF (깔끔한 테스트 출력을 위해)
+- **개발 환경** (`NODE_ENV=development`): 기본적으로 ON
+- **프로덕션** (`NODE_ENV=production`): 기본적으로 OFF
+- **명시적 제어**: `FEATURE_LOGS=true/false`는 기본값을 오버라이드 (최우선 순위)
+
+**package.json 예시:**
+
+```json
+{
+  "scripts": {
+    "dev": "FEATURE_LOGS=true nodemon app.js",
+    "start": "node app.js"
+  }
+}
+```
+
+**출력 예시:**
+
+```
+[Feature] POST /api/orders - Start
+[Step] 100-validate.js - Start
+[Step] 100-validate.js - Complete (15ms)
+[Step] 200-check-stock.js - Start
+[Step] 200-check-stock.js - Complete (8ms)
+[Step] 300-create-order.js - Start
+[Step] 300-create-order.js - Complete (23ms)
+[Feature] POST /api/orders - Complete (46ms)
+[Async-Tasks] Starting 2 async tasks...
+```
+
 ### TypeScript 에러?
 
 타입 정의가 설치되어 있는지 확인하세요:

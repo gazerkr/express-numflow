@@ -1,0 +1,30 @@
+{
+  "name": "express-numflow-lifecycle-hooks-example",
+  "version": "1.0.0",
+  "description": "Example demonstrating contextInitializer and onError lifecycle hooks",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "FEATURE_LOGS=true nodemon app.js"
+  },
+  "imports": {
+    "#db": "./db.js",
+    "#lib/*": "./lib/*.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-numflow": "^0.1.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "express-numflow",
+    "lifecycle-hooks",
+    "contextInitializer",
+    "onError",
+    "esm"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,29 @@
+{
+  "name": "express-numflow-basic-esm-example",
+  "version": "1.0.0",
+  "description": "Basic ESM example for express-numflow with package.json imports",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "FEATURE_LOGS=true nodemon app.js"
+  },
+  "imports": {
+    "#db": "./db.js",
+    "#lib/*": "./lib/*.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-numflow": "^0.1.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "express-numflow",
+    "esm",
+    "es-modules",
+    "example"
+  ],
+  "license": "MIT"
+}

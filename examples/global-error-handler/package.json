@@ -1,0 +1,27 @@
+{
+  "name": "express-numflow-global-error-handler-example",
+  "version": "1.0.0",
+  "description": "Express-Numflow example demonstrating global error handler with app.use()",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "FEATURE_LOGS=true node --watch app.js"
+  },
+  "keywords": [
+    "express",
+    "numflow",
+    "error-handler",
+    "middleware"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-numflow": "workspace:*"
+  },
+  "imports": {
+    "#db": "./db.js",
+    "#lib/*": "./lib/*.js"
+  }
+}
