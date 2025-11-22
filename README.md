@@ -5,6 +5,37 @@
 [![npm version](https://img.shields.io/npm/v/express-numflow.svg)](https://www.npmjs.com/package/express-numflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+---
+
+## Why Numflow?
+
+While most frameworks focus on "how to implement", Numflow focuses on **"how to develop and maintain"**.
+
+As services grow, code becomes complex and business logic gets scattered across multiple files. If you've ever wondered "Where does the logic for this API start and end?", Numflow is the answer.
+
+### 1. Folder Structure IS the API Specification
+Just by looking at `features/api/orders/@post`, you instantly know it's the `POST /api/orders` API.
+No need to hunt for router configurations. The folder name and structure are the URL and HTTP method.
+
+### 2. Code is the Living Design Document
+Keeping design documents and code in sync is nearly impossible. In Numflow, directories and filenames ARE the current implementation and the design.
+Even after years of maintenance, you can grasp exactly how the system works just by looking at the directory structure—it looks just like a design document.
+**The numbers in filenames are not just labels. Numflow guarantees execution in this numeric order at all times.**
+- `100-validate.js`
+- `200-check-stock.js`
+- `300-payment.js`
+
+### 3. Flexible Structure for Changes
+Need to add logic in the middle? No need to rewrite existing code.
+Just create a `150-check-coupon.js` file. Numflow automatically executes it between 100 and 200.
+Deleting a feature is as simple as deleting a file. Respond quickly to business requirements without worrying about side effects.
+
+### 4. Perfect Cohesion
+All related logic (validation, DB operations, async tasks, etc.) is gathered in one folder.
+No more wandering through files to modify a feature.
+
+---
+
 ## What is express-numflow?
 
 **express-numflow** brings [Numflow](https://github.com/gazerkr/numflow)'s powerful **Feature-First architecture** to your existing Express applications. Split complex business logic into sequential steps, organize code by features, and let folder structure define your API - all without changing your Express setup.
