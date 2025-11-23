@@ -307,9 +307,9 @@ export class ConventionResolver {
         // Skip this file (convention.ts/convention.js)
         if (fileName.includes('/convention.')) continue
 
-        // Skip express-numflow framework files (dist/cjs/, dist/esm/)
-        // This ensures we get the actual user's feature file
-        if (fileName.includes('express-numflow/dist/')) {
+        // Skip framework internal files (dist/cjs/, dist/esm/)
+        // This ensures we get the actual user's feature file, not the compiled framework code
+        if (fileName.includes('/dist/cjs/') || fileName.includes('/dist/esm/')) {
           continue
         }
 
