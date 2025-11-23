@@ -374,14 +374,15 @@ export function feature(config: FeatureConfig = {}): Feature {
   }
 
   let basePath = path.dirname(callerPath)
+  let conventionError: Error | null = null
 
   // Try to resolve conventions from folder structure
   try {
     conventions = ConventionResolver.resolveConventions(callerPath)
   } catch (error) {
-    // Ignore convention resolution errors (fallback to manual config)
-    // This happens when calling feature() outside of features/ directory (e.g., tests)
-    // In this case, use process.cwd() as basePath for relative paths to work
+    // Convention resolution failed (e.g., outside of features/ directory)
+    // Save error for later warning if no explicit method/path is provided
+    conventionError = error as Error
     basePath = process.cwd()
   }
 
@@ -394,6 +395,32 @@ export function feature(config: FeatureConfig = {}): Feature {
     middlewares: config.middlewares,
     contextInitializer: config.contextInitializer,
     onError: config.onError,
+  }
+
+  // Validate that method and path are provided
+  // If Convention resolution failed and user didn't provide explicit method/path, show warning
+  if (!mergedConfig.method || !mergedConfig.path) {
+    if (conventionError) {
+      // Convention resolution failed AND user didn't provide explicit method/path
+      console.warn(
+        `[express-numflow] Warning: Feature created without method or path.\n` +
+        `  Location: ${callerPath}\n` +
+        `  Reason: ${conventionError.message}\n` +
+        `  Solution: Either:\n` +
+        `    1. Move this file to a 'features/' directory structure (e.g., features/api/users/@post/index.js)\n` +
+        `    2. Provide explicit method and path:\n` +
+        `       feature({ method: 'POST', path: '/api/users', ... })\n` +
+        `  Note: This Feature will not be registrable until method and path are provided.`
+      )
+    } else {
+      // Convention resolution succeeded but method/path still missing (should not happen)
+      console.warn(
+        `[express-numflow] Warning: Feature created without method or path.\n` +
+        `  Location: ${callerPath}\n` +
+        `  Please provide explicit method and path:\n` +
+        `    feature({ method: 'POST', path: '/api/users', ... })`
+      )
+    }
   }
 
   return new Feature(mergedConfig, basePath)

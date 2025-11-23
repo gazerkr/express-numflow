@@ -307,9 +307,9 @@ export class ConventionResolver {
         // Skip this file (convention.ts/convention.js)
         if (fileName.includes('/convention.')) continue
 
-        // Skip numflow framework files (dist/*/feature/index.*)
-        // But NOT user's feature files!
-        if (fileName.includes('/dist/') && fileName.includes('/feature/') && fileName.includes('/index.')) {
+        // Skip express-numflow framework files (dist/cjs/, dist/esm/)
+        // This ensures we get the actual user's feature file
+        if (fileName.includes('express-numflow/dist/')) {
           continue
         }
 
@@ -322,6 +322,41 @@ export class ConventionResolver {
     } finally {
       Error.prepareStackTrace = originalPrepareStackTrace
     }
+  }
+
+  /**
+   * Infer features base directory from feature directory
+   *
+   * Walks up the directory tree to find the @{method} folder,
+   * then returns its parent directory as the features base.
+   *
+   * @param featureDir - Feature directory path
+   * @returns Inferred features base directory
+   *
+   * @example
+   * inferFeaturesBase('/path/to/test.xml/@get')
+   * // -> '/path/to'
+   *
+   * inferFeaturesBase('/path/to/api/users/@post')
+   * // -> '/path/to/api/users'
+   */
+  static inferFeaturesBase(featureDir: string): string {
+    let currentPath = featureDir
+
+    // Walk up to find @{method} folder
+    while (currentPath !== path.parse(currentPath).root) {
+      const dirName = path.basename(currentPath)
+
+      if (this.isHttpMethod(dirName)) {
+        // Found @{method} folder, return its parent
+        return path.dirname(currentPath)
+      }
+
+      currentPath = path.dirname(currentPath)
+    }
+
+    // Fallback: If no @{method} folder found, return parent of featureDir
+    return path.dirname(featureDir)
   }
 
   /**
@@ -366,7 +401,19 @@ export class ConventionResolver {
     asyncTasks: string | null
   } {
     const featureDir = path.dirname(callerPath)
-    const base = featuresBase || this.findFeaturesBaseDir(featureDir)
+
+    let base: string
+    if (featuresBase) {
+      base = featuresBase
+    } else {
+      try {
+        base = this.findFeaturesBaseDir(featureDir)
+      } catch (error) {
+        // Fallback: Use inferFeaturesBase to find @{method} folder's parent
+        // This allows feature() to work even outside 'features' directory
+        base = this.inferFeaturesBase(featureDir)
+      }
+    }
 
     return {
       method: this.inferMethod(featureDir),
