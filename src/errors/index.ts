@@ -5,6 +5,8 @@
  * Error type definitions for regular routes and Feature-First
  */
 
+import { hasStatusCode } from '../utils/type-guards'
+
 /**
  * HTTP error base class
  */
@@ -181,18 +183,42 @@ export class ServiceUnavailableError extends HttpError {
 
 /**
  * Check if error is HttpError
+ *
+ * Supports duck typing for cross-module instance compatibility.
+ * When using `file:../` references, instanceof checks may fail
+ * because each module instance has its own class definition.
  */
 export function isHttpError(error: unknown): error is HttpError {
-  return error instanceof HttpError
+  // First check with instanceof (same module instance)
+  if (error instanceof HttpError) {
+    return true
+  }
+
+  // Duck typing fallback (different module instances)
+  if (error instanceof Error && hasStatusCode(error)) {
+    return true
+  }
+
+  return false
 }
 
 /**
  * Check if error is Operational Error (expected error)
+ *
+ * Supports duck typing for cross-module instance compatibility.
  */
 export function isOperationalError(error: unknown): boolean {
+  // First check with instanceof (same module instance)
   if (error instanceof HttpError) {
     return error.isOperational
   }
+
+  // Duck typing fallback (different module instances)
+  if (error instanceof Error && hasStatusCode(error)) {
+    const isOperational = (error as any).isOperational
+    return typeof isOperational === 'boolean' ? isOperational : false
+  }
+
   return false
 }
 
@@ -209,8 +235,15 @@ export class FeatureExecutionError extends HttpError {
   }
 
   constructor(originalError: Error, step?: { number: number; name: string }) {
-    // Keep status code if original error is HttpError, otherwise 500
-    const statusCode = originalError instanceof HttpError ? originalError.statusCode : 500
+    // Keep status code if original error is HttpError (or duck-typed), otherwise 500
+    // Use duck typing with hasStatusCode() for cross-module instance compatibility
+    let statusCode = 500
+    if (originalError instanceof HttpError) {
+      statusCode = originalError.statusCode
+    } else if (hasStatusCode(originalError)) {
+      // Duck typing fallback for different module instances
+      statusCode = originalError.statusCode
+    }
 
     const suggestion = step
       ? `Error occurred in step ${step.number} (${step.name}). Check the step implementation and ensure all dependencies are available.`

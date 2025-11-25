@@ -11,6 +11,29 @@
 
 import { ServerResponse } from 'http'
 import { FeatureError, ValidationError } from './types'
+import { hasStatusCode } from '../utils/type-guards'
+
+/**
+ * Check if error is FeatureError (or duck-typed FeatureError)
+ */
+function isFeatureError(error: Error): error is FeatureError {
+  if (error instanceof FeatureError) {
+    return true
+  }
+  // Duck typing fallback
+  return error.name === 'FeatureError' && hasStatusCode(error)
+}
+
+/**
+ * Check if error is ValidationError (or duck-typed ValidationError)
+ */
+function isValidationError(error: Error): error is ValidationError {
+  if (error instanceof ValidationError) {
+    return true
+  }
+  // Duck typing fallback
+  return error.name === 'ValidationError' && hasStatusCode(error)
+}
 
 /**
  * Auto-Error Handler class
@@ -42,8 +65,8 @@ export class AutoErrorHandler {
     let errorMessage = 'An unexpected error occurred'
     let details: any = {}
 
-    // Handle FeatureError
-    if (error instanceof FeatureError) {
+    // Handle FeatureError (including duck-typed)
+    if (isFeatureError(error)) {
       statusCode = error.statusCode
       errorName = error.name
       errorMessage = error.message
@@ -55,9 +78,9 @@ export class AutoErrorHandler {
         }
       }
     }
-    // Handle ValidationError
-    else if (error instanceof ValidationError) {
-      statusCode = 400
+    // Handle ValidationError (including duck-typed)
+    else if (isValidationError(error)) {
+      statusCode = (error as any).statusCode || 400
       errorName = 'ValidationError'
       errorMessage = error.message
     }
@@ -98,7 +121,7 @@ export class AutoErrorHandler {
     console.error(`  Name: ${error.name}`)
     console.error(`  Message: ${error.message}`)
 
-    if (error instanceof FeatureError && error.step) {
+    if (isFeatureError(error) && error.step) {
       console.error(`  Step: ${error.step.number} (${error.step.name})`)
     }
 
