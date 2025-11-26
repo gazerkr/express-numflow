@@ -22,7 +22,7 @@ async function bootstrap() {
   // Error handler (optional, for uncaught errors)
   app.use((err, req, res, next) => {
     console.error('Unhandled error:', err)
-    res.status(500).json({
+    res.status(err.statusCode || 500).json({
       success: false,
       error: err.message,
     })

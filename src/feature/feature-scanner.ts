@@ -203,6 +203,15 @@ export class FeatureScanner {
         typeof feature.getInfo === 'function' &&
         typeof feature.initialize === 'function'
       ) {
+        // Update conventions using scanner's baseDir knowledge
+        // This fixes the case where feature() couldn't find the features base directory
+        const featureDir = path.dirname(filePath)
+        const conventions = ConventionResolver.resolveConventions(filePath, this.baseDir || undefined)
+
+        if (typeof feature.updateConventions === 'function') {
+          feature.updateConventions(conventions.method, conventions.path, featureDir)
+        }
+
         return feature as Feature
       }
 

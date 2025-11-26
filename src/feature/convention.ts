@@ -307,9 +307,16 @@ export class ConventionResolver {
         // Skip this file (convention.ts/convention.js)
         if (fileName.includes('/convention.')) continue
 
-        // Skip framework internal files (dist/cjs/, dist/esm/)
+        // Skip framework internal files (dist/cjs/, dist/esm/, src/feature/)
         // This ensures we get the actual user's feature file, not the compiled framework code
-        if (fileName.includes('/dist/cjs/') || fileName.includes('/dist/esm/')) {
+        if (
+          fileName.includes('/dist/cjs/') ||
+          fileName.includes('/dist/esm/') ||
+          fileName.includes('/src/feature/feature.') ||
+          fileName.includes('/src/feature/feature-scanner.') ||
+          fileName.includes('/src/feature/auto-') ||
+          fileName.includes('/src/create-feature-router.')
+        ) {
           continue
         }
 

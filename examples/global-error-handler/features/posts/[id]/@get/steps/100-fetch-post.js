@@ -12,8 +12,10 @@ export default async (ctx, req, res) => {
 
   if (!post) {
     console.log('[STEP 100] ❌ Post not found')
-    // Throw error - will be caught by global error handler
-    throw new Error(`Post with ID ${req.params.id} not found`)
+    // Throw error with statusCode - will be caught by global error handler
+    const error = new Error(`Post with ID ${req.params.id} not found`)
+    error.statusCode = 404
+    throw error
   }
 
   ctx.post = post

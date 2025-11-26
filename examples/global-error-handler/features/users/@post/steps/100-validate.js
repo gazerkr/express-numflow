@@ -16,8 +16,9 @@ export default async (ctx, req, res) => {
 
   if (!validation.valid) {
     console.log('[STEP 100] ❌ Validation failed')
-    // Throw error - will be caught by global error handler
+    // Throw error with statusCode - will be caught by global error handler
     const error = new Error('User validation failed')
+    error.statusCode = 400
     error.errors = validation.errors
     throw error
   }
@@ -26,8 +27,10 @@ export default async (ctx, req, res) => {
   const existingUser = getUserByEmail(ctx.userData.email)
   if (existingUser) {
     console.log('[STEP 100] ❌ Duplicate email')
-    // Throw error - will be caught by global error handler
-    throw new Error(`User with email ${ctx.userData.email} already exists`)
+    // Throw error with statusCode - will be caught by global error handler
+    const error = new Error(`User with email ${ctx.userData.email} already exists`)
+    error.statusCode = 409
+    throw error
   }
 
   console.log('[STEP 100] ✅ Validation passed')

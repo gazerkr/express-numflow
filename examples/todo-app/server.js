@@ -44,7 +44,7 @@ async function start() {
   // Error handler
   app.use((err, req, res, next) => {
     console.error('Error:', err)
-    res.status(500).json({
+    res.status(err.statusCode || 500).json({
       success: false,
       error: err.message || 'Internal server error',
     })

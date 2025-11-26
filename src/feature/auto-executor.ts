@@ -12,7 +12,6 @@
  */
 
 import { StepInfo, Context, AutoExecutionOptions, FeatureError } from './types'
-import { hasStatusCode } from '../utils/type-guards'
 import { createAsyncResponseProxy, AsyncResponseTracker } from '../utils/async-response-proxy'
 
 /**
@@ -196,7 +195,7 @@ export class AutoExecutor {
         // Wrap generic Error as FeatureError
         // Preserve originalError to prevent loss of custom properties (code, validationErrors, etc.)
         const err = error as Error
-        const statusCode = hasStatusCode(err) ? err.statusCode : 500
+        const statusCode = (err as any).statusCode || 500
         const featureError = new FeatureError(
           err.message,
           err,  // Preserve original error as originalError

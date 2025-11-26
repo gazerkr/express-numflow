@@ -35,97 +35,41 @@ const featureRouter = await createFeatureRouter('./features', {
 
 app.use(featureRouter)
 
-// ============================================================================
-// GLOBAL ERROR HANDLER
-// ============================================================================
-/**
- * This middleware catches ALL errors thrown in any route/feature
- * Must be defined AFTER all routes (app.use(featureRouter))
- * Must have exactly 4 parameters: (err, req, res, next)
- */
-app.use((err, req, res, next) => {
-  console.log('\n' + '='.repeat(60))
-  console.log('GLOBAL ERROR HANDLER TRIGGERED')
-  console.log('='.repeat(60))
-
-  // Log error details
-  console.log(`Error Type: ${err.constructor.name}`)
-  console.log(`Error Message: ${err.message}`)
-  if (err.stack) {
-    console.log(`Stack Trace:\n${err.stack}`)
-  }
-
-  // Custom error properties
-  if (err.statusCode) {
-    console.log(`Status Code: ${err.statusCode}`)
-  }
-  if (err.errors) {
-    console.log(`Validation Errors:`, err.errors)
-  }
-
-  console.log('='.repeat(60) + '\n')
-
-  // Prevent response if already sent
-  if (res.headersSent) {
-    console.log('Response already sent, delegating to default handler')
-    return next(err)
-  }
-
-  // ========================================
-  // Error Response Logic
-  // ========================================
-
-  // 1. Validation Errors (400)
-  if (err.message.includes('validation') || err.errors) {
-    return res.status(400).json({
-      success: false,
-      error: 'Bad Request',
-      message: err.message,
-      errors: err.errors || [],
-    })
-  }
-
-  // 2. Not Found Errors (404)
-  if (err.message.includes('not found')) {
-    return res.status(404).json({
-      success: false,
-      error: 'Not Found',
-      message: err.message,
-    })
-  }
-
-  // 3. Conflict Errors (409)
-  if (err.message.includes('already exists') || err.message.includes('duplicate')) {
-    return res.status(409).json({
-      success: false,
-      error: 'Conflict',
-      message: err.message,
-    })
-  }
-
-  // 4. Custom Status Code
-  if (err.statusCode) {
-    return res.status(err.statusCode).json({
-      success: false,
-      error: err.name || 'Error',
-      message: err.message,
-    })
-  }
-
-  // 5. Generic Server Error (500)
-  res.status(500).json({
-    success: false,
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
-  })
-})
-
 // 404 Handler - Must be AFTER featureRouter but BEFORE error handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`,
+  })
+})
+
+// ============================================================================
+// GLOBAL ERROR HANDLER
+// ============================================================================
+/**
+ * This middleware catches ALL errors thrown in any route/feature
+ * Must be defined AFTER all routes (app.use(featureRouter)) and 404 handler
+ * Must have exactly 4 parameters: (err, req, res, next)
+ */
+app.use((err, req, res, next) => {
+  console.log('\n' + '='.repeat(60))
+  console.log('GLOBAL ERROR HANDLER TRIGGERED')
+  console.log('='.repeat(60))
+  console.log(`Error: ${err.message}`)
+  console.log(`Status: ${err.statusCode || 500}`)
+  console.log('='.repeat(60) + '\n')
+
+  // Prevent response if already sent
+  if (res.headersSent) {
+    return next(err)
+  }
+
+  // Simple error response - statusCode from error or default 500
+  res.status(err.statusCode || 500).json({
+    success: false,
+    error: err.message,
+    ...(err.errors && { errors: err.errors }),
   })
 })
 

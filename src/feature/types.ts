@@ -502,13 +502,4 @@ export class FeatureError extends Error {
   }
 }
 
-/**
- * Validation Error
- * Error that occurs when data validation fails
- */
-export class ValidationError extends FeatureError {
-  constructor(message: string, context?: Context) {
-    super(message, undefined, undefined, context, 400)
-    this.name = 'ValidationError'
-  }
-}
+// ValidationError removed - use Express-style: error.statusCode = 400

@@ -13,7 +13,6 @@ import {
   hasQuery,
   hasReq,
   hasApp,
-  hasStatusCode,
   hasCode,
   hasValidationErrors,
 } from '../../src/utils/type-guards'
@@ -343,55 +342,6 @@ describe('Type Guards', () => {
     })
   })
 
-  describe('hasStatusCode()', () => {
-    it('should return true when statusCode exists as number', () => {
-      // Given: Error with statusCode
-      const error = new Error('Test')
-      ;(error as any).statusCode = 404
-
-      // When: Check if has statusCode
-      const result = hasStatusCode(error)
-
-      // Then: Returns true
-      expect(result).toBe(true)
-    })
-
-    it('should return false when statusCode does not exist', () => {
-      // Given: Error without statusCode
-      const error = new Error('Test')
-
-      // When: Check if has statusCode
-      const result = hasStatusCode(error)
-
-      // Then: Returns false
-      expect(result).toBe(false)
-    })
-
-    it('should return false when statusCode is not a number', () => {
-      // Given: Error with non-number statusCode
-      const error = new Error('Test')
-      ;(error as any).statusCode = '404'
-
-      // When: Check if has statusCode
-      const result = hasStatusCode(error)
-
-      // Then: Returns false
-      expect(result).toBe(false)
-    })
-
-    it('should return true for statusCode 0', () => {
-      // Given: Error with statusCode 0
-      const error = new Error('Test')
-      ;(error as any).statusCode = 0
-
-      // When: Check if has statusCode
-      const result = hasStatusCode(error)
-
-      // Then: Returns true
-      expect(result).toBe(true)
-    })
-  })
-
   describe('hasCode()', () => {
     it('should return true when code exists as string', () => {
       // Given: Error with code
@@ -549,14 +499,14 @@ describe('Type Guards', () => {
     })
 
     it('should handle error with multiple properties', () => {
-      // Given: Error with statusCode and code
+      // Given: Error with code and validationErrors
       const error = new Error('Test')
-      ;(error as any).statusCode = 500
-      ;(error as any).code = 'INTERNAL_ERROR'
+      ;(error as any).code = 'VALIDATION_ERROR'
+      ;(error as any).validationErrors = { field: ['required'] }
 
       // When & Then: Both guards return true
-      expect(hasStatusCode(error)).toBe(true)
       expect(hasCode(error)).toBe(true)
+      expect(hasValidationErrors(error)).toBe(true)
     })
   })
 })

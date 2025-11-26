@@ -3,19 +3,17 @@ module.exports = async (ctx, req, res) => {
 
   // At least one of title or completed must be provided
   if (title === undefined && completed === undefined) {
-    return res.status(400).json({
-      success: false,
-      error: 'Title is required',
-    })
+    const error = new Error('Title is required')
+    error.statusCode = 400
+    throw error
   }
 
   // Validate title if provided
   if (title !== undefined) {
     if (title.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Title is required',
-      })
+      const error = new Error('Title is required')
+      error.statusCode = 400
+      throw error
     }
     ctx.title = title.trim()
   }

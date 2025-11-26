@@ -122,16 +122,6 @@ export function hasApp(res: Response): res is Response & { app: any } {
 }
 
 /**
- * Check if Error has statusCode field
- *
- * @param error - Error object
- * @returns Whether statusCode field exists
- */
-export function hasStatusCode(error: Error): error is Error & { statusCode: number } {
-  return 'statusCode' in error && typeof (error as any).statusCode === 'number'
-}
-
-/**
  * Check if Error has code field
  *
  * @param error - Error object

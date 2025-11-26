@@ -4,9 +4,8 @@ module.exports = async (ctx, req, res) => {
   const deleted = db.delete(req.params.id)
 
   if (!deleted) {
-    return res.status(404).json({
-      success: false,
-      error: 'Todo not found',
-    })
+    const error = new Error('Todo not found')
+    error.statusCode = 404
+    throw error
   }
 }

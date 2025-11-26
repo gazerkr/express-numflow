@@ -42,13 +42,12 @@ import {
   Context,
   StepInfo,
   AsyncTaskInfo,
-  FeatureError,
 } from './types'
 import { Request, Response, NextFunction } from '../types/index'
 import { AutoDiscovery } from './auto-discovery'
 import { AutoExecutor } from './auto-executor'
 import { AsyncTaskScheduler } from './async-task-scheduler'
-import { FeatureExecutionError } from '../errors/index'
+// FeatureError already contains step info, no need for additional wrapping
 import { ConventionResolver } from './convention'
 import { RETRY, isRetrySignal, RetrySignal } from './retry'
 
@@ -57,7 +56,7 @@ import { RETRY, isRetrySignal, RetrySignal } from './retry'
  * Creates HTTP request handler based on Feature configuration
  */
 export class Feature {
-  private readonly config: FeatureConfig
+  private config: FeatureConfig
   private steps: StepInfo[] = []
   private asyncTasks: AsyncTaskInfo[] = []
   private initialized: boolean = false
@@ -66,6 +65,24 @@ export class Feature {
   constructor(config: FeatureConfig, basePath: string) {
     this.config = config
     this.basePath = basePath
+  }
+
+  /**
+   * Update method and path from scanner's convention resolution
+   * This is called by FeatureScanner when the feature's convention
+   * was not properly resolved (e.g., when features base dir couldn't be found)
+   */
+  updateConventions(method: string, apiPath: string, newBasePath?: string): void {
+    if (!this.config.method || this.config.path === '/') {
+      this.config = {
+        ...this.config,
+        method: method as any,
+        path: apiPath,
+      }
+    }
+    if (newBasePath) {
+      this.basePath = newBasePath
+    }
   }
 
   /**
@@ -265,18 +282,8 @@ export class Feature {
           }
 
           // Pass to Global Error Handler if no custom error handler
-          // Wrap with FeatureExecutionError
-          let step: { number: number; name: string } | undefined = undefined
-
-          // Extract step info if FeatureError
-          if (error instanceof FeatureError && error.step) {
-            step = {
-              number: error.step.number,
-              name: error.step.name
-            }
-          }
-
-          throw new FeatureExecutionError(error as Error, step)
+          // FeatureError already contains step info, just rethrow
+          throw error
         }
       }
 

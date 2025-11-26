@@ -2,16 +2,16 @@
  * Auto-Error Handler
  *
  * Automatically handles errors that occur during Feature execution.
+ * Simplified Express-style error handling.
  *
  * Key features:
  * 1. Error catching: Catches all errors that occur during Step execution
  * 2. HTTP response: Converts errors to appropriate HTTP responses
- * 3. Error logging: Logs error information
+ * 3. Step info: Includes step information for debugging
  */
 
 import { ServerResponse } from 'http'
-import { FeatureError, ValidationError } from './types'
-import { hasStatusCode } from '../utils/type-guards'
+import { FeatureError } from './types'
 
 /**
  * Check if error is FeatureError (or duck-typed FeatureError)
@@ -21,18 +21,7 @@ function isFeatureError(error: Error): error is FeatureError {
     return true
   }
   // Duck typing fallback
-  return error.name === 'FeatureError' && hasStatusCode(error)
-}
-
-/**
- * Check if error is ValidationError (or duck-typed ValidationError)
- */
-function isValidationError(error: Error): error is ValidationError {
-  if (error instanceof ValidationError) {
-    return true
-  }
-  // Duck typing fallback
-  return error.name === 'ValidationError' && hasStatusCode(error)
+  return error.name === 'FeatureError' && typeof (error as any).statusCode === 'number'
 }
 
 /**
@@ -56,56 +45,53 @@ export class AutoErrorHandler {
   /**
    * Send HTTP error response
    *
+   * Express-style: statusCode from error or 500
+   *
    * @param error - Error that occurred
    * @param res - HTTP Response object
    */
   private static sendErrorResponse(error: Error, res: ServerResponse): void {
+    // Get statusCode: FeatureError > error.statusCode > 500
     let statusCode = 500
-    let errorName = 'InternalServerError'
-    let errorMessage = 'An unexpected error occurred'
-    let details: any = {}
 
-    // Handle FeatureError (including duck-typed)
     if (isFeatureError(error)) {
       statusCode = error.statusCode
-      errorName = error.name
-      errorMessage = error.message
+    } else if (typeof (error as any).statusCode === 'number') {
+      statusCode = (error as any).statusCode
+    }
 
-      if (error.step) {
-        details.step = {
-          number: error.step.number,
-          name: error.step.name,
-        }
+    const message = error.message || 'An unexpected error occurred'
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    // Build response
+    const response: any = {
+      error: {
+        message,
+        statusCode,
+      },
+    }
+
+    // Include step info if FeatureError
+    if (isFeatureError(error) && error.step) {
+      response.error.step = {
+        number: error.step.number,
+        name: error.step.name,
       }
     }
-    // Handle ValidationError (including duck-typed)
-    else if (isValidationError(error)) {
-      statusCode = (error as any).statusCode || 400
-      errorName = 'ValidationError'
-      errorMessage = error.message
-    }
-    // Handle generic Error
-    else {
-      statusCode = 500
-      errorName = 'Error'
-      errorMessage = error.message || 'An unexpected error occurred'
+
+    // Include stack trace in development
+    if (isDev && error.stack) {
+      // Prefer original error stack for FeatureError
+      const stack = isFeatureError(error) && error.originalError
+        ? error.originalError.stack
+        : error.stack
+      response.error.stack = stack
     }
 
     // Send JSON response
     res.statusCode = statusCode
     res.setHeader('Content-Type', 'application/json')
-    res.end(
-      JSON.stringify({
-        success: false,
-        error: errorName,
-        message: errorMessage,
-        details: Object.keys(details).length > 0 ? details : undefined,
-        // Include stack trace only in development environment
-        ...(process.env.NODE_ENV === 'development' && {
-          stack: error.stack,
-        }),
-      })
-    )
+    res.end(JSON.stringify(response))
   }
 
   /**

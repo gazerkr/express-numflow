@@ -2,10 +2,9 @@ module.exports = async (ctx, req, res) => {
   const { title } = req.body
 
   if (!title || title.trim() === '') {
-    return res.status(400).json({
-      success: false,
-      error: 'Title is required',
-    })
+    const error = new Error('Title is required')
+    error.statusCode = 400
+    throw error
   }
 
   ctx.title = title.trim()
