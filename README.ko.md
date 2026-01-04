@@ -562,12 +562,61 @@ npm test -- convention.test.ts
 
 ---
 
+## WebSocket 지원
+
+express-numflow는 Socket.io를 사용하는 WebSocket 애플리케이션도 동일한 Feature-First 아키텍처로 지원합니다:
+
+```javascript
+const { Server } = require('socket.io')
+const { createWsHandler } = require('express-numflow')
+
+const io = new Server(server)
+const wsHandler = await createWsHandler('./ws')
+
+io.on('connection', wsHandler)
+```
+
+### WebSocket 폴더 구조
+
+```
+ws/
+  chat/
+    @connect/                  <- 'connect' 이벤트
+      steps/
+        100-authenticate.js
+    @disconnect/               <- 'disconnect' 이벤트
+      steps/
+        100-cleanup.js
+    send/
+      @message/                <- 'chat:send' 이벤트
+        steps/
+          100-validate.js
+          200-broadcast.js
+```
+
+### WebSocket Step 예제
+
+```javascript
+// ws/chat/send/@message/steps/200-broadcast.js
+module.exports = async (ctx, trigger, responder) => {
+  responder.to(ctx.room).emit('chat:message', {
+    user: ctx.username,
+    message: trigger.data.message
+  })
+}
+```
+
+자세한 내용은 [WebSocket 가이드](./docs/websocket.ko.md)를 참고하세요.
+
+---
+
 ## 더 알아보기
 
 - [API 레퍼런스](./docs/api-reference.ko.md) - 완전한 API 문서
 - [Feature-First 아키텍처 가이드](./docs/feature-first-architecture.ko.md)
 - [Convention over Configuration](./docs/convention-over-configuration.ko.md)
 - [경로 별칭(Path Aliasing) 가이드](./docs/path-aliasing.ko.md)
+- [WebSocket 가이드](./docs/websocket.ko.md) - Socket.io WebSocket 지원
 - [Todo 앱 예제](./examples/todo-app/)
 
 ---

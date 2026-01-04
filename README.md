@@ -554,12 +554,61 @@ npm test -- convention.test.ts
 
 ---
 
+## WebSocket Support
+
+express-numflow also supports WebSocket applications using Socket.io with the same Feature-First architecture:
+
+```javascript
+const { Server } = require('socket.io')
+const { createWsHandler } = require('express-numflow')
+
+const io = new Server(server)
+const wsHandler = await createWsHandler('./ws')
+
+io.on('connection', wsHandler)
+```
+
+### WebSocket Folder Structure
+
+```
+ws/
+  chat/
+    @connect/                  <- 'connect' event
+      steps/
+        100-authenticate.js
+    @disconnect/               <- 'disconnect' event
+      steps/
+        100-cleanup.js
+    send/
+      @message/                <- 'chat:send' event
+        steps/
+          100-validate.js
+          200-broadcast.js
+```
+
+### WebSocket Step Example
+
+```javascript
+// ws/chat/send/@message/steps/200-broadcast.js
+module.exports = async (ctx, trigger, responder) => {
+  responder.to(ctx.room).emit('chat:message', {
+    user: ctx.username,
+    message: trigger.data.message
+  })
+}
+```
+
+See the [WebSocket Guide](./docs/websocket.md) for complete documentation.
+
+---
+
 ## Learn More
 
 - [API Reference](./docs/api-reference.md) - Complete API documentation
 - [Feature-First Architecture Guide](./docs/feature-first-architecture.md)
 - [Convention over Configuration](./docs/convention-over-configuration.md)
 - [Path Aliasing Guide](./docs/path-aliasing.md)
+- [WebSocket Guide](./docs/websocket.md) - WebSocket support with Socket.io
 - [Todo App Example](./examples/todo-app/)
 
 ---
