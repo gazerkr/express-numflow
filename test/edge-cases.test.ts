@@ -7,7 +7,7 @@
 import express, { Express } from 'express'
 import request from 'supertest'
 import { createFeatureRouter } from '../src/create-feature-router'
-import { feature } from '../src/feature/feature'
+import { feature } from '../src/http/feature'
 import * as path from 'path'
 import * as fs from 'fs'
 

@@ -4,8 +4,8 @@
  * Tests for res.render(), res.download(), res.sendFile() support
  */
 
-import { AutoExecutor } from '../src/feature/auto-executor'
-import { StepInfo } from '../src/feature/types'
+import { AutoExecutor } from '../src/http/auto-executor'
+import { StepInfo } from '../src/http/types'
 
 describe('Async Response Support', () => {
   describe('res.render() support', () => {

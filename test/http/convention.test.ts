@@ -4,7 +4,7 @@
  * Tests for convention-over-configuration system
  */
 
-import { ConventionResolver } from '../../src/feature/convention'
+import { ConventionResolver } from '../../src/http/convention'
 
 describe('Convention System', () => {
   describe('inferMethod()', () => {

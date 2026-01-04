@@ -5,8 +5,8 @@
  */
 
 import { Router } from 'express'
-import { FeatureScanner } from './feature/feature-scanner'
-import type { ScannedFeature } from './feature/feature-scanner'
+import { FeatureScanner } from './http/feature-scanner'
+import type { ScannedFeature } from './http/feature-scanner'
 import type { RouterOptions } from 'express'
 
 export interface CreateFeatureRouterOptions {

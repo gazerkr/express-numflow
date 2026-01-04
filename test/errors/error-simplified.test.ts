@@ -7,7 +7,7 @@
  * - statusCode is preserved if present on original error
  */
 import { describe, it, expect } from '@jest/globals'
-import { FeatureError, StepInfo } from '../../src/feature/types'
+import { FeatureError, StepInfo } from '../../src/http/types'
 
 describe('Simplified Error Handling', () => {
   describe('FeatureError', () => {

@@ -4,7 +4,7 @@
  * Tests for route registration order (static routes before dynamic routes)
  */
 
-import { scanFeatures } from '../src/feature/feature-scanner'
+import { scanFeatures } from '../src/http/feature-scanner'
 
 describe('Route Priority', () => {
   describe('Static vs Dynamic routes', () => {

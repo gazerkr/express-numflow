@@ -36,6 +36,7 @@ export class AsyncTaskScheduler {
    *    - development → ON (helpful for debugging)
    *    - production → OFF (clean production logs)
    */
+  /* istanbul ignore next - Debug mode detection is only executed at module load time */
   private static readonly isDebugMode = (() => {
     // Test environment: always OFF
     if (process.env.NODE_ENV === 'test') {
@@ -120,6 +121,7 @@ export class AsyncTaskScheduler {
    *
    * @param message - Log message
    */
+  /* istanbul ignore next - Only executed in debug mode */
   private log(message: string): void {
     // Performance optimization: use static cached isDebugMode
     if (!AsyncTaskScheduler.isDebugMode) {
@@ -133,6 +135,7 @@ export class AsyncTaskScheduler {
    *
    * @param message - Error message
    */
+  /* istanbul ignore next - Only executed in debug mode */
   private logError(message: string): void {
     // Performance optimization: use static cached isDebugMode
     if (!AsyncTaskScheduler.isDebugMode) {

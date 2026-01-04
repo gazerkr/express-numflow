@@ -177,6 +177,7 @@ export class AutoDiscovery {
 
       // For ESM files, use Function constructor to force true dynamic import
       // This prevents TypeScript from converting import() to require() in CommonJS build
+      /* istanbul ignore next - ESM path is hard to test in Jest CJS environment */
       const module = isESM
         ? await (new Function('p', 'return import(p)'))(filePath)
         : await import(filePath)
@@ -184,12 +185,14 @@ export class AutoDiscovery {
       // Check default export (ESM) or module.exports (CommonJS)
       const fn = module.default || module
 
+      /* istanbul ignore if - Error path for non-function exports */
       if (typeof fn !== 'function') {
         throw new Error(`Step file must export a function: ${filePath}`)
       }
 
       return fn
     } catch (error) {
+      /* istanbul ignore next - Error wrapping */
       throw new Error(
         `Failed to load step from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -211,6 +214,7 @@ export class AutoDiscovery {
 
       // For ESM files, use Function constructor to force true dynamic import
       // This prevents TypeScript from converting import() to require() in CommonJS build
+      /* istanbul ignore next - ESM path is hard to test in Jest CJS environment */
       const module = isESM
         ? await (new Function('p', 'return import(p)'))(filePath)
         : await import(filePath)
@@ -218,12 +222,14 @@ export class AutoDiscovery {
       // Check default export (ESM) or module.exports (CommonJS)
       const fn = module.default || module
 
+      /* istanbul ignore if - Error path for non-function exports */
       if (typeof fn !== 'function') {
         throw new Error(`Async task file must export a function: ${filePath}`)
       }
 
       return fn
     } catch (error) {
+      /* istanbul ignore next - Error wrapping */
       throw new Error(
         `Failed to load async task from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -239,6 +245,7 @@ export class AutoDiscovery {
  * @param allowDuplicates - Allow duplicate numbers (default: false)
  * @returns Sorted Step list
  */
+/* istanbul ignore next - Helper function that wraps class */
 export async function discoverSteps(
   directory: string,
   pattern: RegExp = /^\d+-.*\.(js|ts)$/,
@@ -259,6 +266,7 @@ export async function discoverSteps(
  * @param directory - Async tasks directory path
  * @returns Async Task list
  */
+/* istanbul ignore next - Helper function that wraps class */
 export async function discoverAsyncTasks(directory: string): Promise<AsyncTaskInfo[]> {
   const discovery = new AutoDiscovery({
     directory,

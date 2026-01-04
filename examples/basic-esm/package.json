@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
-    "express-numflow": "^0.1.8"
+    "express-numflow": "file:../../"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

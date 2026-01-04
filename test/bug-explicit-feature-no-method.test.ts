@@ -10,7 +10,7 @@
 
 import * as path from 'path'
 import * as fs from 'fs'
-import { ConventionResolver } from '../src/feature/convention'
+import { ConventionResolver } from '../src/http/convention'
 
 describe('Bug: Explicit Feature with index.js has no method', () => {
   const testDir = path.join(process.cwd(), 'test-fixtures', 'bug-no-method')

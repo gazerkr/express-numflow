@@ -5,8 +5,8 @@
  */
 
 import { ServerResponse } from 'http'
-import { AutoErrorHandler } from '../../src/feature/auto-error-handler'
-import { FeatureError, StepInfo } from '../../src/feature/types'
+import { AutoErrorHandler } from '../../src/http/auto-error-handler'
+import { FeatureError, StepInfo } from '../../src/http/types'
 
 describe('Auto-Error Handler', () => {
   let mockRes: ServerResponse

@@ -58,6 +58,7 @@ export class AutoExecutor {
    * - Production debug: FEATURE_LOGS=true → Logs ON
    * - Production normal: (no env vars) → Logs OFF
    */
+  /* istanbul ignore next - Debug mode detection is only executed at module load time */
   private static readonly isDebugMode = (() => {
     // Test environment: always OFF
     if (process.env.NODE_ENV === 'test') {
@@ -119,6 +120,7 @@ export class AutoExecutor {
       let contextBefore: any
 
       // Context snapshot only in Debug Mode (before execution)
+      /* istanbul ignore if - Debug mode is always false in test environment */
       if (AutoExecutor.isDebugMode) {
         contextBefore = this.cloneContext(context)
       }
@@ -128,6 +130,7 @@ export class AutoExecutor {
         await step.fn(context, req, wrappedRes)
 
         // Statistics and log processing only in Debug Mode
+        /* istanbul ignore if - Debug mode is always false in test environment */
         if (AutoExecutor.isDebugMode) {
           const duration = Date.now() - startTime
           const contextAfter = this.cloneContext(context)
@@ -168,6 +171,7 @@ export class AutoExecutor {
 
       } catch (error) {
         // Error statistics and log processing only in Debug Mode
+        /* istanbul ignore if - Debug mode is always false in test environment */
         if (AutoExecutor.isDebugMode) {
           const duration = Date.now() - startTime
 
@@ -233,6 +237,7 @@ export class AutoExecutor {
   /**
    * Output Feature start header
    */
+  /* istanbul ignore next - Only executed in debug mode */
   private logHeader(req?: any): void {
     // Performance optimization: use static cached isDebugMode
     if (!AutoExecutor.isDebugMode) {
@@ -248,6 +253,7 @@ export class AutoExecutor {
   /**
    * Output Step detail log
    */
+  /* istanbul ignore next - Only executed in debug mode */
   private logStep(
     step: StepInfo,
     duration: number,
@@ -296,6 +302,7 @@ export class AutoExecutor {
   /**
    * Output overall Summary
    */
+  /* istanbul ignore next - Only executed in debug mode */
   private logSummary(success: boolean, finalError?: Error): void {
     // Performance optimization: use static cached isDebugMode
     if (!AutoExecutor.isDebugMode) {
@@ -323,6 +330,7 @@ export class AutoExecutor {
   /**
    * Clone Context (deep copy)
    */
+  /* istanbul ignore next - Only used in debug mode */
   private cloneContext(context: Context): any {
     try {
       // Copy excluding req, res
@@ -337,6 +345,7 @@ export class AutoExecutor {
   /**
    * Format Context changes (before → after)
    */
+  /* istanbul ignore next - Only used in debug mode */
   private formatContextDiff(before: any, after: any): string {
     try {
       // Track only results changes
@@ -365,6 +374,7 @@ export class AutoExecutor {
   /**
    * Format Context for display
    */
+  /* istanbul ignore next - Only used in debug mode */
   private formatContextForDisplay(context: any, type: 'input' | 'output'): string {
     try {
       if (type === 'input') {
@@ -387,6 +397,7 @@ export class AutoExecutor {
   /**
    * Format object to string (with length limit)
    */
+  /* istanbul ignore next - Only used in debug mode */
   private formatObject(obj: any, maxLength: number = 80): string {
     try {
       const str = JSON.stringify(obj)

@@ -7,8 +7,8 @@
 
 import express, { Express } from 'express'
 import path from 'path'
-import { AutoExecutor } from '../src/feature/auto-executor'
-import { StepInfo } from '../src/feature/types'
+import { AutoExecutor } from '../src/http/auto-executor'
+import { StepInfo } from '../src/http/types'
 
 describe('Template Engine Integration', () => {
   describe('EJS Template Engine', () => {

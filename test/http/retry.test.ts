@@ -4,7 +4,7 @@
  * Tests for retry() function and RETRY symbol
  */
 
-import { retry, RETRY, isRetrySignal, RetrySignal } from '../../src/feature/retry'
+import { retry, RETRY, isRetrySignal, RetrySignal } from '../../src/http/retry'
 
 describe('Retry Mechanism', () => {
   describe('retry() function', () => {

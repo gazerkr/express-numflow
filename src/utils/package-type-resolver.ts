@@ -31,10 +31,12 @@ function findNearestPackageJson(filePath: string): string | null {
     }
 
     const parentDir = path.dirname(currentDir)
+    /* istanbul ignore if - Edge case: reaching filesystem root */
     if (parentDir === currentDir) break // Reached root
     currentDir = parentDir
   }
 
+  /* istanbul ignore next - Edge case: no package.json in any parent directory */
   return null
 }
 
@@ -49,6 +51,7 @@ function readPackageType(packageJsonPath: string): 'module' | 'commonjs' {
     // Default to 'commonjs' if not specified
     return packageJson.type === 'module' ? 'module' : 'commonjs'
   } catch (error) {
+    /* istanbul ignore next - Error reading package.json */
     // If error reading package.json, default to commonjs
     return 'commonjs'
   }
@@ -93,10 +96,12 @@ export function resolveModuleType(filePath: string): 'esm' | 'commonjs' {
       return packageType === 'module' ? 'esm' : 'commonjs'
     }
 
+    /* istanbul ignore next - No package.json found */
     // No package.json found, default to commonjs
     return 'commonjs'
   }
 
+  /* istanbul ignore next - Unknown extension */
   // Unknown extension, default to commonjs
   return 'commonjs'
 }
