@@ -13,7 +13,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import { resolveModuleType } from '../utils/package-type-resolver'
+import { loadModule } from '../utils/module-loader'
 import { StepInfo, AsyncTaskInfo, AutoDiscoveryOptions, StepFunction, AsyncTaskFunction } from './types'
 
 /**
@@ -170,29 +170,14 @@ export class AutoDiscovery {
    */
   private async loadStepFunction(filePath: string): Promise<StepFunction> {
     try {
-      // Use dynamic import for both CommonJS and ESM support
-      // Detect module type based on file extension AND package.json "type" field
-      const moduleType = resolveModuleType(filePath)
-      const isESM = moduleType === 'esm'
+      const fn = await loadModule(filePath)
 
-      // For ESM files, use Function constructor to force true dynamic import
-      // This prevents TypeScript from converting import() to require() in CommonJS build
-      /* istanbul ignore next - ESM path is hard to test in Jest CJS environment */
-      const module = isESM
-        ? await (new Function('p', 'return import(p)'))(filePath)
-        : await import(filePath)
-
-      // Check default export (ESM) or module.exports (CommonJS)
-      const fn = module.default || module
-
-      /* istanbul ignore if - Error path for non-function exports */
       if (typeof fn !== 'function') {
         throw new Error(`Step file must export a function: ${filePath}`)
       }
 
       return fn
     } catch (error) {
-      /* istanbul ignore next - Error wrapping */
       throw new Error(
         `Failed to load step from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -207,29 +192,14 @@ export class AutoDiscovery {
    */
   private async loadAsyncTaskFunction(filePath: string): Promise<AsyncTaskFunction> {
     try {
-      // Use dynamic import for both CommonJS and ESM support
-      // Detect module type based on file extension AND package.json "type" field
-      const moduleType = resolveModuleType(filePath)
-      const isESM = moduleType === 'esm'
+      const fn = await loadModule(filePath)
 
-      // For ESM files, use Function constructor to force true dynamic import
-      // This prevents TypeScript from converting import() to require() in CommonJS build
-      /* istanbul ignore next - ESM path is hard to test in Jest CJS environment */
-      const module = isESM
-        ? await (new Function('p', 'return import(p)'))(filePath)
-        : await import(filePath)
-
-      // Check default export (ESM) or module.exports (CommonJS)
-      const fn = module.default || module
-
-      /* istanbul ignore if - Error path for non-function exports */
       if (typeof fn !== 'function') {
         throw new Error(`Async task file must export a function: ${filePath}`)
       }
 
       return fn
     } catch (error) {
-      /* istanbul ignore next - Error wrapping */
       throw new Error(
         `Failed to load async task from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       )

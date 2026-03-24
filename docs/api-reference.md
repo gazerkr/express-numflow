@@ -60,7 +60,7 @@ interface CreateFeatureRouterOptions {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `indexPatterns` | `string[]` | `['index.js', 'index.ts', 'index.mjs', 'index.mts']` | File patterns to recognize as Feature index files |
+| `indexPatterns` | `string[]` | `['index.js', 'index.ts', 'index.mjs', 'index.mts']` | File patterns to recognize as Feature index files. `.ts` files are natively supported via the built-in jiti loader -- no separate build step required |
 | `excludeDirs` | `string[]` | `['node_modules', '.git', 'dist', 'build']` | Directory names to exclude from scanning |
 | `debug` | `boolean` | `false` | Enable debug logging to console |
 | `routerOptions` | `RouterOptions` | `{}` | Options passed to Express Router constructor |
@@ -347,6 +347,42 @@ interface Context {
 - **Shared Across Steps**: All steps in a Feature can read and write to the same context
 - **Mutable**: Fields can be added or modified at any time
 - **No Restrictions**: Any field name can be used
+
+#### Reserved Properties
+
+The following properties have special meaning and are used by the framework:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `__stop` | `boolean` | When set to `true`, stops step execution immediately |
+| `__streaming` | `boolean` | When set to `true`, step execution continues even after `res.flushHeaders()` is called. Useful for SSE (Server-Sent Events) and streaming responses |
+
+##### `__streaming` Example (SSE)
+
+```javascript
+// steps/100-setup-sse.js
+module.exports = async (ctx, req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  })
+  res.flushHeaders()
+
+  // Without __streaming, remaining steps would be skipped
+  // because res.headersSent becomes true
+  ctx.__streaming = true
+}
+
+// steps/200-stream-data.js
+module.exports = async (ctx, req, res) => {
+  // This step runs because ctx.__streaming is true
+  for (const item of ctx.items) {
+    res.write(`data: ${JSON.stringify(item)}\n\n`)
+  }
+  res.end()
+}
+```
 
 #### Usage Patterns
 
@@ -960,6 +996,25 @@ module.exports = feature({
 
   contextInitializer: (ctx, req, res) => {
     ctx.userId = req.user.id  // Available after authenticate
+  },
+})
+```
+
+#### Feature-level Middleware with Multer
+
+Third-party Express middlewares such as Multer can be used directly in the `middlewares` array:
+
+```javascript
+const { feature } = require('express-numflow')
+const multer = require('multer')
+
+const upload = multer({ dest: 'uploads/' })
+
+module.exports = feature({
+  middlewares: [upload.single('avatar')],
+
+  contextInitializer: (ctx, req, res) => {
+    ctx.file = req.file
   },
 })
 ```

@@ -61,7 +61,7 @@ npm install express express-numflow
 
 **요구사항:**
 
-- Node.js >= 14.0.0
+- Node.js >= 18.0.0
 - Express ^4.0.0 || ^5.0.0
 
 ---
@@ -152,6 +152,20 @@ module.exports = feature({
 });
 ```
 
+### Middlewares (Multer 예시)
+
+`middlewares` 옵션을 사용하여 feature에 Express 미들웨어를 연결할 수 있습니다. 예를 들어, [Multer](https://github.com/expressjs/multer)를 사용한 파일 업로드:
+
+```javascript
+// features/api/upload/@post/index.js
+const { feature } = require('express-numflow')
+const multer = require('multer')
+
+module.exports = feature({
+  middlewares: [multer({ storage: multer.memoryStorage() }).single('file')],
+})
+```
+
 ### Implicit Feature (`index.js` 불필요!)
 
 ```
@@ -205,6 +219,19 @@ module.exports = async (ctx, req, res) => {
 ```
 
 **흐름**: 100 → 200 → 300 (자동!)
+
+### TypeScript Steps
+
+Step 파일을 `.ts`로 직접 작성할 수 있습니다 - 빌드 과정이 필요 없습니다. 내장된 [jiti](https://github.com/unjs/jiti) 로더가 런타임에 TypeScript를 처리하며, `.ts` step에서 다른 `.ts` 모듈을 import할 수 있습니다:
+
+```typescript
+// features/api/users/@get/steps/100-fetch.ts
+import { prisma } from '../../../shared/db'
+
+export default async (ctx: any, req: any, res: any) => {
+  ctx.users = await prisma.user.findMany()
+}
+```
 
 ### 왜 Numeric Flow인가?
 
@@ -321,6 +348,29 @@ module.exports = async (ctx, req, res) => {
 | `res.sendfile()` | 비동기 (deprecated) | ✅ 자동 추적 |
 
 **그냥 작동합니다™** - 비동기 완료를 신경 쓰지 않고 자연스럽게 코드를 작성하세요!
+
+### Streaming / SSE
+
+SSE(Server-Sent Events) 또는 스트리밍 응답의 경우, `ctx.__streaming = true`를 설정하면 step runner가 열린 연결을 미전송 응답으로 처리하는 것을 방지합니다:
+
+```javascript
+// steps/100-setup-sse.js
+export default async (ctx, req, res) => {
+  ctx.__streaming = true
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.flushHeaders()
+}
+
+// steps/200-stream.js
+export default async (ctx, req, res) => {
+  for await (const chunk of createStream()) {
+    res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+  }
+  res.end()
+}
+```
 
 ---
 

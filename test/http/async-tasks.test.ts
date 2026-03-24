@@ -179,26 +179,42 @@ describe('Async Tasks', () => {
         }`
       )
 
-      // Create async tasks that track execution order
+      // Create a shared file to track execution order
+      const orderFile = path.join(asyncDir, '_order.json')
+      fs.writeFileSync(orderFile, '[]')
+
+      // Create async tasks that track execution order via file
       fs.writeFileSync(
         path.join(asyncDir, '100-first.js'),
-        `module.exports = async (ctx) => {
-          if (!global.asyncOrder) global.asyncOrder = []
-          global.asyncOrder.push('first')
+        `const fs = require('fs')
+        const path = require('path')
+        module.exports = async (ctx) => {
+          const orderFile = path.join(__dirname, '_order.json')
+          const order = JSON.parse(fs.readFileSync(orderFile, 'utf-8'))
+          order.push('first')
+          fs.writeFileSync(orderFile, JSON.stringify(order))
         }`
       )
       fs.writeFileSync(
         path.join(asyncDir, '200-second.js'),
-        `module.exports = async (ctx) => {
-          if (!global.asyncOrder) global.asyncOrder = []
-          global.asyncOrder.push('second')
+        `const fs = require('fs')
+        const path = require('path')
+        module.exports = async (ctx) => {
+          const orderFile = path.join(__dirname, '_order.json')
+          const order = JSON.parse(fs.readFileSync(orderFile, 'utf-8'))
+          order.push('second')
+          fs.writeFileSync(orderFile, JSON.stringify(order))
         }`
       )
       fs.writeFileSync(
         path.join(asyncDir, '300-third.js'),
-        `module.exports = async (ctx) => {
-          if (!global.asyncOrder) global.asyncOrder = []
-          global.asyncOrder.push('third')
+        `const fs = require('fs')
+        const path = require('path')
+        module.exports = async (ctx) => {
+          const orderFile = path.join(__dirname, '_order.json')
+          const order = JSON.parse(fs.readFileSync(orderFile, 'utf-8'))
+          order.push('third')
+          fs.writeFileSync(orderFile, JSON.stringify(order))
         }`
       )
 
@@ -206,17 +222,14 @@ describe('Async Tasks', () => {
       const router = await createFeatureRouter(testFixturesDir)
       app.use(router)
 
-      ;(global as any).asyncOrder = []
       await request(app).post('/api/ordered').expect(200)
 
       // Wait for async tasks to complete
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Then: Tasks executed in order
-      expect((global as any).asyncOrder).toEqual(['first', 'second', 'third'])
-
-      // Cleanup
-      delete (global as any).asyncOrder
+      const order = JSON.parse(fs.readFileSync(orderFile, 'utf-8'))
+      expect(order).toEqual(['first', 'second', 'third'])
     })
   })
 
@@ -239,12 +252,16 @@ describe('Async Tasks', () => {
         }`
       )
 
+      const contextFile = path.join(asyncDir, '_context.json')
+      fs.writeFileSync(contextFile, '{}')
+
       fs.writeFileSync(
         path.join(asyncDir, 'use-context.js'),
-        `module.exports = async (ctx) => {
-          if (!global.contextData) global.contextData = {}
-          global.contextData.userId = ctx.userId
-          global.contextData.email = ctx.email
+        `const fs = require('fs')
+        const path = require('path')
+        module.exports = async (ctx) => {
+          const contextFile = path.join(__dirname, '_context.json')
+          fs.writeFileSync(contextFile, JSON.stringify({ userId: ctx.userId, email: ctx.email }))
         }`
       )
 
@@ -252,18 +269,15 @@ describe('Async Tasks', () => {
       const router = await createFeatureRouter(testFixturesDir)
       app.use(router)
 
-      ;(global as any).contextData = {}
       await request(app).post('/api/context-share').send({ email: 'test@example.com' }).expect(200)
 
       // Wait for async task
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Then: Context was shared
-      expect((global as any).contextData.userId).toBe(123)
-      expect((global as any).contextData.email).toBe('test@example.com')
-
-      // Cleanup
-      delete (global as any).contextData
+      const contextData = JSON.parse(fs.readFileSync(contextFile, 'utf-8'))
+      expect(contextData.userId).toBe(123)
+      expect(contextData.email).toBe('test@example.com')
     })
   })
 
@@ -336,13 +350,19 @@ describe('Async Tasks', () => {
         }`
       )
 
+      const countFile = path.join(asyncDir, '_count.json')
+      fs.writeFileSync(countFile, '0')
+
       // Create 10 async tasks
       for (let i = 1; i <= 10; i++) {
         fs.writeFileSync(
           path.join(asyncDir, `${i * 100}-task-${i}.js`),
-          `module.exports = async (ctx) => {
-            if (!global.taskCount) global.taskCount = 0
-            global.taskCount++
+          `const fs = require('fs')
+          const path = require('path')
+          module.exports = async (ctx) => {
+            const countFile = path.join(__dirname, '_count.json')
+            const count = parseInt(fs.readFileSync(countFile, 'utf-8'), 10)
+            fs.writeFileSync(countFile, String(count + 1))
           }`
         )
       }
@@ -351,17 +371,14 @@ describe('Async Tasks', () => {
       const router = await createFeatureRouter(testFixturesDir)
       app.use(router)
 
-      ;(global as any).taskCount = 0
       await request(app).post('/api/many-async').expect(200)
 
       // Wait for all tasks
       await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Then: All tasks executed
-      expect((global as any).taskCount).toBe(10)
-
-      // Cleanup
-      delete (global as any).taskCount
+      const taskCount = parseInt(fs.readFileSync(countFile, 'utf-8'), 10)
+      expect(taskCount).toBe(10)
     })
   })
 })

@@ -58,7 +58,7 @@ npm install express express-numflow
 ```
 
 **Requirements:**
-- Node.js >= 14.0.0
+- Node.js >= 18.0.0
 - Express ^4.0.0 || ^5.0.0
 
 ---
@@ -149,6 +149,20 @@ module.exports = feature({
 })
 ```
 
+### Middlewares (Multer Example)
+
+Use the `middlewares` option to attach Express middlewares to a feature. For example, file uploads with [Multer](https://github.com/expressjs/multer):
+
+```javascript
+// features/api/upload/@post/index.js
+const { feature } = require('express-numflow')
+const multer = require('multer')
+
+module.exports = feature({
+  middlewares: [multer({ storage: multer.memoryStorage() }).single('file')],
+})
+```
+
 ### Implicit Feature (no `index.js` needed!)
 
 ```
@@ -202,6 +216,19 @@ module.exports = async (ctx, req, res) => {
 ```
 
 **Flow**: 100 → 200 → 300 (automatic!)
+
+### TypeScript Steps
+
+Step files can be written in `.ts` directly - no build step required. The built-in [jiti](https://github.com/unjs/jiti) loader handles TypeScript at runtime, and `.ts` steps can import other `.ts` modules:
+
+```typescript
+// features/api/users/@get/steps/100-fetch.ts
+import { prisma } from '../../../shared/db'
+
+export default async (ctx: any, req: any, res: any) => {
+  ctx.users = await prisma.user.findMany()
+}
+```
 
 ### Why Numeric Flow?
 
@@ -314,6 +341,29 @@ module.exports = async (ctx, req, res) => {
 | `res.sendfile()` | Async (deprecated) | ✅ Auto-tracked |
 
 **This just works™** - write code naturally without thinking about async completion!
+
+### Streaming / SSE
+
+For SSE (Server-Sent Events) or streaming responses, set `ctx.__streaming = true` to prevent the step runner from treating an open connection as an unsent response:
+
+```javascript
+// steps/100-setup-sse.js
+export default async (ctx, req, res) => {
+  ctx.__streaming = true
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.flushHeaders()
+}
+
+// steps/200-stream.js
+export default async (ctx, req, res) => {
+  for await (const chunk of createStream()) {
+    res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+  }
+  res.end()
+}
+```
 
 ---
 

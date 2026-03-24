@@ -145,8 +145,9 @@ feature-name/
 - 공통 `ctx` (context) 객체 공유
 - `req`와 `res`에 접근 가능
 - 에러를 던져서 실행 중지 가능
+- `.js`와 `.ts` 파일 모두 지원 (TypeScript는 jiti를 통해 네이티브 지원)
 
-**예제:**
+**예제 (JavaScript):**
 ```javascript
 // steps/100-validate.js
 module.exports = async (ctx, req, res) => {
@@ -167,6 +168,25 @@ module.exports = async (ctx, req, res) => {
     success: true,
     user: ctx.user
   })
+}
+```
+
+**예제 (TypeScript):**
+```typescript
+// steps/100-validate.ts
+import { Context } from 'express-numflow'
+import { Request, Response } from 'express'
+
+interface UserContext extends Context {
+  email: string
+  user?: { id: string; email: string }
+}
+
+export default async function validate(ctx: UserContext, req: Request, res: Response) {
+  if (!req.body.email) {
+    throw new Error('이메일이 필요합니다')
+  }
+  ctx.email = req.body.email
 }
 ```
 

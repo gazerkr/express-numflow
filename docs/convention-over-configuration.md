@@ -301,7 +301,9 @@ todos/[id]/complete/@patch/  →  PATCH /todos/:id/complete
 
 ### Step Files
 
-**Convention:** `[number]-[descriptive-name].js`
+**Convention:** `[number]-[descriptive-name].js` or `[number]-[descriptive-name].ts`
+
+Both `.js` and `.ts` extensions are supported. TypeScript files are natively loaded via the built-in jiti loader -- no separate build step required.
 
 **Rules:**
 1. Start with a number (100, 200, 300, etc.)
@@ -311,12 +313,19 @@ todos/[id]/complete/@patch/  →  PATCH /todos/:id/complete
 **Examples:**
 
 ```javascript
-// Good
+// Good (JavaScript)
 100-validate-input.js
 200-check-permissions.js
 300-fetch-from-database.js
 400-transform-data.js
 500-send-response.js
+
+// Good (TypeScript - natively supported)
+100-validate-input.ts
+200-check-permissions.ts
+300-fetch-from-database.ts
+400-transform-data.ts
+500-send-response.ts
 
 // Bad
 1.js                    // Not descriptive

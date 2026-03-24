@@ -150,7 +150,7 @@ export class AutoExecutor {
         }
 
         // Performance optimization: res.headersSent check (early response detection)
-        if (res.headersSent) {
+        if (res.headersSent && !context.__streaming) {
           this.logSummary(true)
           return context
         }
@@ -163,7 +163,7 @@ export class AutoExecutor {
           await asyncTracker.promise
 
           // After async operation completes, check if response was sent
-          if (res.headersSent) {
+          if (res.headersSent && !context.__streaming) {
             this.logSummary(true)
             return context
           }
@@ -221,10 +221,18 @@ export class AutoExecutor {
     }
 
     // Error if response not sent after all steps completed
-    if (res && 'headersSent' in res && !res.headersSent) {
+    if (res && 'headersSent' in res && !res.headersSent && !context.__streaming) {
       throw new Error(
         'Feature completed without sending a response. ' +
         'Make sure to call res.json(), res.send(), res.end(), or similar in your steps.'
+      )
+    }
+
+    // Streaming mode: verify res.end() was called
+    if (context.__streaming && res && 'writableEnded' in res && !(res as any).writableEnded) {
+      console.warn(
+        '[express-numflow] Warning: Streaming mode ended without calling res.end(). ' +
+        'Make sure to call res.end() in your final step to properly close the stream.'
       )
     }
 

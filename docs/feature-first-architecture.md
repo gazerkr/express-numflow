@@ -145,8 +145,9 @@ feature-name/
 - Share a common `ctx` (context) object
 - Can access `req` and `res`
 - Can throw errors to stop execution
+- Both `.js` and `.ts` files are supported (TypeScript natively via jiti)
 
-**Example:**
+**Example (JavaScript):**
 ```javascript
 // steps/100-validate.js
 module.exports = async (ctx, req, res) => {
@@ -167,6 +168,25 @@ module.exports = async (ctx, req, res) => {
     success: true,
     user: ctx.user
   })
+}
+```
+
+**Example (TypeScript):**
+```typescript
+// steps/100-validate.ts
+import { Context } from 'express-numflow'
+import { Request, Response } from 'express'
+
+interface UserContext extends Context {
+  email: string
+  user?: { id: string; email: string }
+}
+
+export default async function validate(ctx: UserContext, req: Request, res: Response) {
+  if (!req.body.email) {
+    throw new Error('Email is required')
+  }
+  ctx.email = req.body.email
 }
 ```
 

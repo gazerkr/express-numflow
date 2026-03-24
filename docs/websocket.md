@@ -83,7 +83,7 @@ user/typing/@message/    -> 'user:typing' event
 
 ## Steps (Sequential Execution)
 
-Steps are executed in numeric order, just like HTTP features:
+Steps are executed in numeric order, just like HTTP features. Both `.js` and `.ts` step files are supported (TypeScript natively via jiti).
 
 ```javascript
 // ws/chat/send/@message/steps/100-validate.js

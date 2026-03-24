@@ -169,8 +169,9 @@ Check the `examples/` directory for complete working examples:
 
 ---
 
-**Last updated:** 2025-01-18
-**Version:** 0.1.0
+**Last updated:** 2026-03-25
+**Version:** 0.2.0
+**Node.js:** >= 18.0.0
 
 ---
 

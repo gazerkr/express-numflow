@@ -301,7 +301,9 @@ todos/[id]/complete/@patch/  →  PATCH /todos/:id/complete
 
 ### Step 파일
 
-**규약:** `[숫자]-[설명적-이름].js`
+**규약:** `[숫자]-[설명적-이름].js` 또는 `[숫자]-[설명적-이름].ts`
+
+`.js`와 `.ts` 확장자 모두 지원됩니다. TypeScript 파일은 내장 jiti 로더를 통해 네이티브로 로드되며 별도의 빌드 단계가 필요 없습니다.
 
 **규칙:**
 1. 숫자로 시작 (100, 200, 300 등)
@@ -311,12 +313,19 @@ todos/[id]/complete/@patch/  →  PATCH /todos/:id/complete
 **예제:**
 
 ```javascript
-// [좋음]
+// [좋음] (JavaScript)
 100-validate-input.js
 200-check-permissions.js
 300-fetch-from-database.js
 400-transform-data.js
 500-send-response.js
+
+// [좋음] (TypeScript - 네이티브 지원)
+100-validate-input.ts
+200-check-permissions.ts
+300-fetch-from-database.ts
+400-transform-data.ts
+500-send-response.ts
 
 // [나쁨]
 1.js                    // 설명적이지 않음

@@ -25,6 +25,7 @@ import * as path from 'path'
 import type { ScannedWsFeature, WsStepInfo, WsFeatureConfig } from './types'
 import type { AsyncTaskInfo } from '../core/types'
 import { WsConventionResolver } from './convention'
+import { loadModule } from '../utils/module-loader'
 
 /**
  * Scanner options
@@ -188,8 +189,7 @@ export class WsFeatureScanner {
       const filePath = path.join(stepsDir, entry.name)
 
       try {
-        const module = await import(filePath)
-        const fn = module.default || module
+        const fn = await loadModule(filePath)
 
         if (typeof fn !== 'function') {
           this.log(`Step ${entry.name} does not export a function, skipping`)
@@ -237,8 +237,7 @@ export class WsFeatureScanner {
       const filePath = path.join(tasksDir, entry.name)
 
       try {
-        const module = await import(filePath)
-        const fn = module.default || module
+        const fn = await loadModule(filePath)
 
         if (typeof fn !== 'function') {
           this.log(`Async task ${entry.name} does not export a function, skipping`)
@@ -270,8 +269,7 @@ export class WsFeatureScanner {
           const actualPath = fs.existsSync(indexPath) ? indexPath :
             fs.existsSync(indexPath + '.js') ? indexPath + '.js' : indexPath + '.ts'
 
-          const module = await import(actualPath)
-          const config = module.default || module
+          const config = await loadModule(actualPath)
 
           if (typeof config === 'object') {
             return config as Partial<WsFeatureConfig>

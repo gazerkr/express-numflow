@@ -60,7 +60,7 @@ interface CreateFeatureRouterOptions {
 
 | 옵션 | 타입 | 기본값 | 설명 |
 |-----|------|--------|------|
-| `indexPatterns` | `string[]` | `['index.js', 'index.ts', 'index.mjs', 'index.mts']` | Feature index 파일로 인식할 파일 패턴 |
+| `indexPatterns` | `string[]` | `['index.js', 'index.ts', 'index.mjs', 'index.mts']` | Feature index 파일로 인식할 파일 패턴. `.ts` 파일은 내장 jiti 로더를 통해 네이티브로 지원되며 별도의 빌드 단계가 필요 없음 |
 | `excludeDirs` | `string[]` | `['node_modules', '.git', 'dist', 'build']` | 스캔에서 제외할 디렉토리 이름 |
 | `debug` | `boolean` | `false` | 디버그 로깅 활성화 |
 | `routerOptions` | `RouterOptions` | `{}` | Express Router 생성자에 전달할 옵션 |
@@ -347,6 +347,42 @@ interface Context {
 - **Steps 간 공유**: Feature의 모든 steps가 동일한 context를 읽고 쓸 수 있음
 - **변경 가능**: 필드를 언제든지 추가하거나 수정 가능
 - **제약 없음**: 어떤 필드명도 사용 가능
+
+#### 예약 속성
+
+다음 속성은 프레임워크에서 특별한 의미를 가지며 사용됩니다:
+
+| 속성 | 타입 | 설명 |
+|-----|------|------|
+| `__stop` | `boolean` | `true`로 설정하면 step 실행을 즉시 중단 |
+| `__streaming` | `boolean` | `true`로 설정하면 `res.flushHeaders()` 호출 이후에도 step 실행을 계속함. SSE (Server-Sent Events) 및 스트리밍 응답에 유용 |
+
+##### `__streaming` 예제 (SSE)
+
+```javascript
+// steps/100-setup-sse.js
+module.exports = async (ctx, req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  })
+  res.flushHeaders()
+
+  // __streaming 없이는 res.headersSent가 true가 되어
+  // 나머지 step들이 건너뛰어짐
+  ctx.__streaming = true
+}
+
+// steps/200-stream-data.js
+module.exports = async (ctx, req, res) => {
+  // ctx.__streaming이 true이므로 이 step이 실행됨
+  for (const item of ctx.items) {
+    res.write(`data: ${JSON.stringify(item)}\n\n`)
+  }
+  res.end()
+}
+```
 
 #### 사용 패턴
 
@@ -960,6 +996,25 @@ module.exports = feature({
 
   contextInitializer: (ctx, req, res) => {
     ctx.userId = req.user.id  // authenticate 후 사용 가능
+  },
+})
+```
+
+#### Multer를 사용한 Feature 레벨 미들웨어
+
+Multer와 같은 서드파티 Express 미들웨어를 `middlewares` 배열에서 직접 사용할 수 있습니다:
+
+```javascript
+const { feature } = require('express-numflow')
+const multer = require('multer')
+
+const upload = multer({ dest: 'uploads/' })
+
+module.exports = feature({
+  middlewares: [upload.single('avatar')],
+
+  contextInitializer: (ctx, req, res) => {
+    ctx.file = req.file
   },
 })
 ```

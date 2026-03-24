@@ -83,7 +83,7 @@ user/typing/@message/    -> 'user:typing' 이벤트
 
 ## Steps (순차 실행)
 
-Steps는 HTTP 기능과 마찬가지로 숫자 순서대로 실행됩니다:
+Steps는 HTTP 기능과 마찬가지로 숫자 순서대로 실행됩니다. `.js`와 `.ts` Step 파일 모두 지원됩니다 (TypeScript는 jiti를 통해 네이티브 지원).
 
 ```javascript
 // ws/chat/send/@message/steps/100-validate.js

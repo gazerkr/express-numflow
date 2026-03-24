@@ -9,6 +9,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { Feature } from './feature'
 import { ConventionResolver } from './convention'
+import { loadModule } from '../utils/module-loader'
 
 export interface ScanOptions {
   /**
@@ -188,11 +189,7 @@ export class FeatureScanner {
    */
   private async loadFeature(filePath: string): Promise<Feature | null> {
     try {
-      // Use dynamic import() for ESM/CommonJS compatibility
-      const module = await import(filePath)
-
-      // Support module.exports or export default
-      const feature = module.default || module
+      const feature = await loadModule(filePath)
 
       // Check if it's a Feature instance
       // Use duck typing instead of instanceof (CommonJS/ESM compatibility)
