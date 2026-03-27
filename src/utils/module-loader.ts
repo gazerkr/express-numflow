@@ -1,7 +1,7 @@
 import { createJiti } from 'jiti'
 
 const jiti = createJiti(process.cwd(), {
-  fsCache: false,
+  fsCache: true,
 })
 
 /**
